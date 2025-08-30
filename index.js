@@ -42,22 +42,21 @@ app.get("/horoskop", async (req, res) => {
     }
 
     // 🔹 Tłumaczenie na polski
-    const translation = await axios.post(
-      "https://libretranslate.de/translate",
-      {
-        q: englishHoroscope,
-        source: "en",
-        target: "pl",
-        format: "text"
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+const translation = await axios.post(
+  "https://libretranslate.de/translate",
+  {
+    q: englishHoroscope,
+    source: "en",
+    target: "pl",
+    format: "text"
+  },
+  {
+    headers: { "Content-Type": "application/json" }  // ⬅️ to dodaj
+  }
+);
 
-    console.log("Translation response:", translation.data);
+const polish = translation.data.translatedText;
 
-    const polish = translation.data.translatedText || translation.data;
 
     // 🔹 Wyślij wynik
     res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
