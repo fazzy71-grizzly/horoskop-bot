@@ -33,34 +33,34 @@ app.get("/horoskop", async (req, res) => {
       headers: { "X-Api-Key": process.env.API_KEY }
     });
 
-    console.log("API response:", JSON.stringify(resp.data, null, 2));
+    console.log("API response:", resp.data);
 
+    // 🔹 Wyciągnięcie treści horoskopu
     const englishHoroscope = resp.data.horoscope;
-    console.log("English horoscope:", englishHoroscope);
-
     if (!englishHoroscope) {
       return res.send("⚠️ API nie zwróciło horoskopu. Odpowiedź: " + JSON.stringify(resp.data));
     }
 
-    // 🔹 Tłumaczenie na PL
-    const translation = await axios.post("https://libretranslate.de/translate", {
-      q: englishHoroscope,
-      source: "en",
-      target: "pl",
-      format: "text"
-    });
+    // 🔹 Tłumaczenie na polski
+    const translation = await axios.post(
+      "https://libretranslate.de/translate",
+      {
+        q: englishHoroscope,
+        source: "en",
+        target: "pl",
+        format: "text"
+      },
+      {
+        headers: { "Content-Type": "application/json" } // ✅ to naprawia problem
+      }
+    );
 
     console.log("Translation response:", translation.data);
 
     const polish = translation.data.translatedText || translation.data;
 
+    // 🔹 Wyślij wynik
     res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
-    return res.send("⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " + JSON.stringify(err.response?.data || err.message));
-  }
-});
-
-app.listen(process.env.PORT || 3000, () =>
-  console.log("✅ Serwer działa...")
-);
+    return
