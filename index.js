@@ -4,60 +4,93 @@ import fetch from "node-fetch";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Mapowanie znaków na API + emoji
-const signMap = {
-  baran: { api: "baran", emoji: "♈" },
-  byk: { api: "byk", emoji: "♉" },
-  bliznieta: { api: "bliznieta", emoji: "♊" },
-  rak: { api: "rak", emoji: "♋" },
-  lew: { api: "lew", emoji: "♌" },
-  panna: { api: "panna", emoji: "♍" },
-  waga: { api: "waga", emoji: "♎" },
-  skorpion: { api: "skorpion", emoji: "♏" },
-  strzelec: { api: "strzelec", emoji: "♐" },
-  koziorozec: { api: "koziorozec", emoji: "♑" },
-  wodnik: { api: "wodnik", emoji: "♒" },
-  ryby: { api: "ryby", emoji: "♓" }
+// Normalizacja: małe litery, bez ogonków, tylko a–z
+function normalize(s = "") {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z]/g, "");
+}
+
+// Mapa po ZNORMALIZOWANYCH kluczach → indeks, etykieta (z ogonkami), emoji, nazwa do API
+const SIGNS = {
+  baran:       { idx: 0, label: "Baran",       emoji: "♈", api: "baran" },
+  byk:         { idx: 1, label: "Byk",         emoji: "♉", api: "byk" },
+  bliznieta:   { idx: 2, label: "Bliźnięta",   emoji: "♊", api: "bliźnięta" },
+  rak:         { idx: 3, label: "Rak",         emoji: "♋", api: "rak" },
+  lew:         { idx: 4, label: "Lew",         emoji: "♌", api: "lew" },
+  panna:       { idx: 5, label: "Panna",       emoji: "♍", api: "panna" },
+  waga:        { idx: 6, label: "Waga",        emoji: "♎", api: "waga" },
+  skorpion:    { idx: 7, label: "Skorpion",    emoji: "♏", api: "skorpion" },
+  strzelec:    { idx: 8, label: "Strzelec",    emoji: "♐", api: "strzelec" },
+  koziorozec:  { idx: 9, label: "Koziorożec",  emoji: "♑", api: "koziorożec" },
+  wodnik:      { idx:10, label: "Wodnik",      emoji: "♒", api: "wodnik" },
+  ryby:        { idx:11, label: "Ryby",        emoji: "♓", api: "ryby" },
 };
 
-// Endpoint
-app.get("/:sign?", async (req, res) => {
-  const rawSign = req.params.sign ? req.params.sign.toLowerCase() : "panna";
+// Aliasy EN (opcjonalnie)
+const ALIASES = {
+  aries: "baran", taurus: "byk", gemini: "bliznieta", cancer: "rak",
+  leo: "lew", virgo: "panna", libra: "waga", scorpio: "skorpion",
+  sagittarius: "strzelec", capricorn: "koziorozec", aquarius: "wodnik", pisces: "ryby"
+};
 
-  if (!signMap[rawSign]) {
-    return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
-  }
+function resolveSignKey(input) {
+  const n = normalize(input);
+  if (SIGNS[n]) return n;
+  if (ALIASES[n] && SIGNS[ALIASES[n]]) return ALIASES[n];
+  return null;
+}
+
+app.get("/", (_req, res) => {
+  res.send("Użycie: /<znak> np. /lew /panna /koziorozec — na Twitchu: !horoskop lew");
+});
+
+app.get("/debug/:sign", (req, res) => {
+  const raw = req.params.sign || "";
+  const key = resolveSignKey(raw);
+  res.json({ raw, normalized: normalize(raw), resolvedKey: key, mapped: key ? SIGNS[key] : null });
+});
+
+app.get("/:sign", async (req, res) => {
+  const key = resolveSignKey(req.params.sign || "");
+  if (!key) return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
+
+  const { idx, label, emoji, api } = SIGNS[key];
 
   try {
-    // Pobranie danych z API
-    const response = await fetch(
-      `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${signMap[rawSign].api}`
-    );
-    const data = await response.json();
+    // Pobierz dane (API zwraca całą tablicę 12 znaków)
+    const url = `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${encodeURIComponent(api)}`;
+    const r = await fetch(url);
+    const data = await r.json();
 
-    // Szukanie horoskopu
-    const horoscope = data.signs.find(
-      (s) =>
-        s.title.toLowerCase() === rawSign ||
-        s.title.toLowerCase() === signMap[rawSign].api.toLowerCase()
-    );
+    const list = Array.isArray(data?.signs) ? data.signs : null;
+    if (!list) return res.send("❌ Błąd przy pobieraniu horoskopu!");
 
-    if (!horoscope) {
-      return res.send("❌ Brak horoskopu dla tego znaku.");
+    // 1) próba po indeksie (najpewniejsze)
+    let item = list[idx];
+
+    // 2) fallback: po nazwie z normalizacją (gdyby kolejność/locale się różniły)
+    if (!item || normalize(item?.title) !== normalize(label)) {
+      item = list.find(s => normalize(s?.title) === normalize(label)) || item;
     }
 
-    // Oczyszczenie tekstu z HTML
-    const prediction = horoscope.prediction
-      .replace(/<[^>]+>/g, "") // usuwa znaczniki HTML
+    if (!item?.prediction) return res.send("❌ Brak horoskopu dla tego znaku.");
+
+    // Oczyść tekst + utnij "Czytaj więcej ..."
+    let text = String(item.prediction)
+      .replace(/<[^>]*>/g, "")                 // usuń HTML
+      .replace(/Czytaj więcej.*$/i, "")        // usuń "Czytaj więcej ..."
+      .replace(/\s+/g, " ")                    // składnia
       .trim();
 
-    // Wynik końcowy
-    const emoji = signMap[rawSign].emoji;
-    const result = `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | Źródło: moj-codzienny-horoskop.com`;
+    // Złóż odpowiedź
+    const out = `🔮 Horoskop na dziś ${emoji} ${item.title || label}: ${text} | Źródło: moj-codzienny-horoskop.com`;
+    res.send(out);
 
-    res.send(result);
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
     res.send("❌ Błąd przy pobieraniu horoskopu!");
   }
 });
