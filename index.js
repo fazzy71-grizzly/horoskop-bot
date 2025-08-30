@@ -1,60 +1,47 @@
-const express = require("express");
-const axios = require("axios");
-const translate = require("google-translate-api-x"); // ✅ import tłumacza
-const app = express();
+import express from "express";
+import fetch from "node-fetch";
+import translate from "@vitalets/google-translate-api"; // darmowa paczka
 
-// 🔹 MAPA znaków PL -> EN
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Mapowanie polskich nazw znaków na angielskie
 const zodiacMap = {
-  baran: "aries",
-  byk: "taurus",
-  bliznieta: "gemini",
-  rak: "cancer",
-  lew: "leo",
-  panna: "virgo",
-  waga: "libra",
-  skorpion: "scorpio",
-  strzelec: "sagittarius",
-  koziorozec: "capricorn",
-  wodnik: "aquarius",
-  ryby: "pisces"
+  "baran": "aries",
+  "byk": "taurus",
+  "bliźnięta": "gemini",
+  "rak": "cancer",
+  "lew": "leo",
+  "panna": "virgo",
+  "waga": "libra",
+  "skorpion": "scorpio",
+  "strzelec": "sagittarius",
+  "koziorożec": "capricorn",
+  "wodnik": "aquarius",
+  "ryby": "pisces"
 };
 
-app.get("/horoskop", async (req, res) => {
-  const signPl = (req.query.sign || "").toLowerCase();
-  const signEn = zodiacMap[signPl];
-
-  if (!signEn) {
-    return res.send("❌ Podaj poprawny znak zodiaku (np. baran, byk, ryby).");
-  }
-
+app.get("/:sign", async (req, res) => {
   try {
-    // ✅ pobranie horoskopu z API Ninjas
-    const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
-      params: { zodiac: signEn },
-      headers: { "X-Api-Key": process.env.API_KEY }
-    });
+    const signPL = req.params.sign.toLowerCase();
+    const signEN = zodiacMap[signPL];
 
-    console.log("API response:", resp.data);
-
-    let englishHoroscope = resp.data.horoscope;
-
-    if (!englishHoroscope) {
-      return res.send("⚠️ API nie zwróciło horoskopu.");
+    if (!signEN) {
+      return res.send("❌ Nie znam takiego znaku zodiaku!");
     }
 
-    // ✅ tłumaczenie horoskopu na polski
-    const translation = await translate(englishHoroscope, { to: "pl" });
+    // Pobranie horoskopu po angielsku
+    const response = await fetch(`https://ohmanda.com/api/horoscope/${signEN}`);
+    const data = await response.json();
 
-    res.send(`🔮 Horoskop dla ${signPl}: ${translation.text}`);
+    // Tłumaczenie na polski
+    const translated = await translate(data.horoscope, { to: "pl" });
+
+    res.send(`Horoskop na dziś (${signPL}): ${translated.text}`);
   } catch (err) {
-    console.error("API error:", err.response?.data || err.message);
-    res.send(
-      "⚠️ Wystąpił problem z pobraniem horoskopu. " +
-        JSON.stringify(err.response?.data || err.message)
-    );
+    console.error(err);
+    res.send("❌ Błąd przy pobieraniu horoskopu!");
   }
 });
 
-app.listen(process.env.PORT || 3000, () =>
-  console.log("✅ Serwer działa...")
-);
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
