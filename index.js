@@ -59,7 +59,7 @@ const polish = translation.data.translatedText;
 
 
     // 🔹 Wyślij wynik
-    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
+    res.send(`🔮 Horoskop dla ${signPl}: ${englishHoroscope}`);
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
     return res.send(
