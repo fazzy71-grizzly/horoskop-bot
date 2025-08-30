@@ -4,12 +4,12 @@ import fetch from "node-fetch";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Mapowanie polskich nazw znaków na indeksy w JSON (0 = Baran, 1 = Byk itd.)
+// Mapowanie polskich znaków zodiaku na indeksy w JSON
 const zodiacMap = {
   "baran": 0,
   "byk": 1,
   "bliźnięta": 2,
-  "bliznieta": 2, // na wszelki wypadek bez polskich znaków
+  "bliznieta": 2, // wersja bez polskich znaków
   "rak": 3,
   "lew": 4,
   "panna": 5,
@@ -27,7 +27,7 @@ app.get("/:sign", async (req, res) => {
   const signIndex = zodiacMap[signPL];
 
   if (signIndex === undefined) {
-    return res.send("❌ Nieznany znak zodiaku!");
+    return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
   }
 
   try {
@@ -41,10 +41,16 @@ app.get("/:sign", async (req, res) => {
       return res.send("❌ Brak horoskopu dla tego znaku.");
     }
 
-    // Usuwamy HTML z "Czytaj więcej o..."
-    const clean = horo.replace(/<[^>]*>?/gm, "");
+    // Usuwamy HTML
+    let clean = horo.replace(/<[^>]*>?/gm, "");
 
-    res.send(`Horoskop na dziś (${signPL}): ${clean}`);
+    // Ucinamy końcówkę "Czytaj więcej..."
+    clean = clean.replace(/Czytaj więcej.*/i, "").trim();
+
+    // Dodajemy źródło (wymóg API)
+    const result = `Horoskop na dziś (${signPL}): ${clean}\nŹródło: moj-codzienny-horoskop.com`;
+
+    res.send(result);
   } catch (err) {
     console.error(err);
     res.send("❌ Błąd serwera przy pobieraniu horoskopu!");
