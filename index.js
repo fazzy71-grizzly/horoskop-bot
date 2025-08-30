@@ -30,7 +30,7 @@ try {
   // 1. Pobranie horoskopu (ENG) z API-Ninjas
   const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
     params: { zodiac: signEn },
-    headers: { "X-Api-Key": process.env.API_KEY }
+    headers: { "rnd_m0IQFzygzM629bmEN7cytHwBttiO": process.env.API_KEY }
   });
 
   const englishHoroscope = resp.data.horoscope.today; // <- poprawka
