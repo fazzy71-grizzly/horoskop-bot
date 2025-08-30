@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const translate = require("@vitalets/google-translate-api"); // ✅ import tłumacza
+const translate = require("google-translate-api-x"); // ✅ import tłumacza
 const app = express();
 
 // 🔹 MAPA znaków PL -> EN
