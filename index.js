@@ -27,15 +27,19 @@ app.get("/horoskop", async (req, res) => {
   }
 
 try {
-  // 1. Pobranie horoskopu (ENG) z API-Ninjas
   const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
     params: { zodiac: signEn },
-    headers: { "5xI2pNA3GK3MSFV3AOACOA==1MsMOXEaPRUkYarB": process.env.API_KEY }
+    headers: { "X-Api-Key": process.env.API_KEY }
   });
 
-  const englishHoroscope = resp.data.horoscope; // <- poprawka
+  console.log("API response:", resp.data); // <<< logowanie w konsoli
 
-  // 2. Tłumaczenie na polski (LibreTranslate darmowe)
+  const englishHoroscope = resp.data.horoscope; // <<< to powinien być string
+
+  if (!englishHoroscope) {
+    return res.send("⚠️ API nie zwróciło horoskopu.");
+  }
+
   const translation = await axios.post("https://libretranslate.de/translate", {
     q: englishHoroscope,
     source: "en",
@@ -47,9 +51,10 @@ try {
 
   res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
 } catch (err) {
-  console.error(err.message, err.response?.data);
+  console.error("API error:", err.response?.data || err.message);
   res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
 }
+
 
 });
 
