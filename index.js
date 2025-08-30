@@ -4,61 +4,61 @@ import fetch from "node-fetch";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Mapowanie znaków → poprawna nazwa dla API + emoji
+// Mapowanie znaków na API + emoji
 const signMap = {
-  baran: { name: "baran", emoji: "♈" },
-  byk: { name: "byk", emoji: "♉" },
-  bliznieta: { name: "bliźnięta", emoji: "♊" },
-  rak: { name: "rak", emoji: "♋" },
-  lew: { name: "lew", emoji: "♌" },
-  panna: { name: "panna", emoji: "♍" },
-  waga: { name: "waga", emoji: "♎" },
-  skorpion: { name: "skorpion", emoji: "♏" },
-  strzelec: { name: "strzelec", emoji: "♐" },
-  koziorozec: { name: "koziorożec", emoji: "♑" },
-  wodnik: { name: "wodnik", emoji: "♒" },
-  ryby: { name: "ryby", emoji: "♓" }
+  baran: { api: "baran", emoji: "♈" },
+  byk: { api: "byk", emoji: "♉" },
+  bliznieta: { api: "bliznieta", emoji: "♊" },
+  rak: { api: "rak", emoji: "♋" },
+  lew: { api: "lew", emoji: "♌" },
+  panna: { api: "panna", emoji: "♍" },
+  waga: { api: "waga", emoji: "♎" },
+  skorpion: { api: "skorpion", emoji: "♏" },
+  strzelec: { api: "strzelec", emoji: "♐" },
+  koziorozec: { api: "koziorozec", emoji: "♑" },
+  wodnik: { api: "wodnik", emoji: "♒" },
+  ryby: { api: "ryby", emoji: "♓" }
 };
 
-const validSigns = Object.keys(signMap);
+// Endpoint
+app.get("/:sign?", async (req, res) => {
+  const rawSign = req.params.sign ? req.params.sign.toLowerCase() : "panna";
 
-app.get("/:sign", async (req, res) => {
+  if (!signMap[rawSign]) {
+    return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
+  }
+
   try {
-    const rawSign = req.params.sign.toLowerCase();
-
-    // Sprawdzamy czy znak istnieje w naszej mapie
-    if (!validSigns.includes(rawSign)) {
-      return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
-    }
-
-    const { name, emoji } = signMap[rawSign];
-
-    // Pobieramy horoskop z API
-    const apiUrl = `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${encodeURIComponent(name)}`;
-    const response = await fetch(apiUrl);
+    // Pobranie danych z API
+    const response = await fetch(
+      `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${signMap[rawSign].api}`
+    );
     const data = await response.json();
 
-    if (!data.signs || !Array.isArray(data.signs)) {
-      return res.send("❌ Błąd przy pobieraniu horoskopu!");
-    }
+    // Szukanie horoskopu
+    const horoscope = data.signs.find(
+      (s) =>
+        s.title.toLowerCase() === rawSign ||
+        s.title.toLowerCase() === signMap[rawSign].api.toLowerCase()
+    );
 
-    const horoscope = data.signs.find(s => s.title.toLowerCase() === name);
     if (!horoscope) {
       return res.send("❌ Brak horoskopu dla tego znaku.");
     }
 
-    // Czyścimy tekst – usuwamy HTML i „Czytaj więcej...”
-    let prediction = horoscope.prediction.replace(/<[^>]+>/g, "").trim();
-    prediction = prediction.replace(/Czytaj więcej.+$/i, "").trim();
+    // Oczyszczenie tekstu z HTML
+    const prediction = horoscope.prediction
+      .replace(/<[^>]+>/g, "") // usuwa znaczniki HTML
+      .trim();
 
-    // Finalna odpowiedź
-    res.send(
-      `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | Źródło: moj-codzienny-horoskop.com`
-    );
+    // Wynik końcowy
+    const emoji = signMap[rawSign].emoji;
+    const result = `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | Źródło: moj-codzienny-horoskop.com`;
 
-  } catch (err) {
-    console.error("Błąd serwera:", err);
-    res.send("❌ Wewnętrzny błąd serwera przy pobieraniu horoskopu.");
+    res.send(result);
+  } catch (error) {
+    console.error(error);
+    res.send("❌ Błąd przy pobieraniu horoskopu!");
   }
 });
 
