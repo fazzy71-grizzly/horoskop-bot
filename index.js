@@ -28,7 +28,7 @@ app.get("/horoskop", async (req, res) => {
 
   try {
     const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
-      params: { sign: signEn }, // ✅ poprawione
+      params: { zodiac: signEn }, // ✅ poprawione
       headers: { "X-Api-Key": process.env.API_KEY } // ✅ poprawione
     });
 
