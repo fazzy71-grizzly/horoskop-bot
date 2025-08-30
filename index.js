@@ -64,10 +64,11 @@ if (!englishHoroscope) {
     const polish = translation.data.translatedText;
 
     res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
-  } catch (err) {
-    console.error("API error:", err.response?.data || err.message);
-    res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
-  }
+} catch (err) {
+  console.error("API error:", err.response?.data || err.message);
+  return res.send("⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " + JSON.stringify(err.response?.data || err.message));
+}
+
 });
 
 app.listen(process.env.PORT || 3000, () =>
