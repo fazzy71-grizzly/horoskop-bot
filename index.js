@@ -29,13 +29,22 @@ app.get("/:sign", async (req, res) => {
       return res.send("❌ Nie znam takiego znaku zodiaku!");
     }
 
+    // pobierz horoskop
     const response = await fetch(`https://ohmanda.com/api/horoscope/${signEN}`);
     const data = await response.json();
 
-    // użycie paczki
+    // sprawdź czy mamy tekst horoskopu
+    if (!data.horoscope) {
+      return res.send("❌ Brak danych horoskopu!");
+    }
+
+    // przetłumacz
     const result = await translate(data.horoscope, { to: "pl" });
 
-    res.send(`Horoskop na dziś (${signPL}): ${result.text}`);
+    // UWAGA: w nowej wersji tekst jest w result[0]
+    const translatedText = result.text || result[0] || "";
+
+    res.send(`Horoskop na dziś (${signPL}): ${translatedText}`);
   } catch (err) {
     console.error(err);
     res.send("❌ Błąd przy pobieraniu horoskopu!");
