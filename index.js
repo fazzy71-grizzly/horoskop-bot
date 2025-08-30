@@ -27,41 +27,38 @@ app.get("/horoskop", async (req, res) => {
   }
 
   try {
+    // 🔹 Pobranie horoskopu z API Ninjas
     const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
-      params: { zodiac: signEn }, // ✅ poprawione
-      headers: { "X-Api-Key": process.env.API_KEY } // ✅ poprawione
+      params: { zodiac: signEn },
+      headers: { "X-Api-Key": process.env.API_KEY }
     });
 
-    console.log("API response:", resp.data);
+    console.log("API response:", JSON.stringify(resp.data, null, 2));
 
-console.log("API response:", JSON.stringify(resp.data, null, 2));
+    const englishHoroscope = resp.data.horoscope;
+    console.log("English horoscope:", englishHoroscope);
 
-let englishHoroscope;
+    if (!englishHoroscope) {
+      return res.send("⚠️ API nie zwróciło horoskopu. Odpowiedź: " + JSON.stringify(resp.data));
+    }
 
-console.log("API response:", JSON.stringify(resp.data, null, 2));
+    // 🔹 Tłumaczenie na PL
+    const translation = await axios.post("https://libretranslate.de/translate", {
+      q: englishHoroscope,
+      source: "en",
+      target: "pl",
+      format: "text"
+    });
 
-const englishHoroscope = resp.data.horoscope; // ✅ poprawione
+    console.log("Translation response:", translation.data);
 
-if (!englishHoroscope) {
-  return res.send("⚠️ API nie zwróciło horoskopu. Odpowiedź: " + JSON.stringify(resp.data));
-}
+    const polish = translation.data.translatedText || translation.data;
 
-const translation = await axios.post("https://libretranslate.de/translate", {
-  q: englishHoroscope,
-  source: "en",
-  target: "pl",
-  format: "text"
-});
-
-const polish = translation.data.translatedText;
-
-res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
-
-} catch (err) {
-  console.error("API error:", err.response?.data || err.message);
-  return res.send("⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " + JSON.stringify(err.response?.data || err.message));
-}
-
+    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
+  } catch (err) {
+    console.error("API error:", err.response?.data || err.message);
+    return res.send("⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " + JSON.stringify(err.response?.data || err.message));
+  }
 });
 
 app.listen(process.env.PORT || 3000, () =>
