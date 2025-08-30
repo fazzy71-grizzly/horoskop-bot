@@ -38,32 +38,25 @@ console.log("API response:", JSON.stringify(resp.data, null, 2));
 
 let englishHoroscope;
 
-// jeśli horoscope jest stringiem
-if (typeof resp.data.horoscope === "string") {
-  englishHoroscope = resp.data.horoscope;
-}
-// jeśli horoscope jest obiektem z datami
-else if (typeof resp.data.horoscope === "object") {
-  // bierzemy pierwszy klucz (np. "2025-08-30")
-  const firstKey = Object.keys(resp.data.horoscope)[0];
-  englishHoroscope = resp.data.horoscope[firstKey];
-}
+console.log("API response:", JSON.stringify(resp.data, null, 2));
+
+const englishHoroscope = resp.data.horoscope; // ✅ poprawione
 
 if (!englishHoroscope) {
   return res.send("⚠️ API nie zwróciło horoskopu. Odpowiedź: " + JSON.stringify(resp.data));
 }
 
+const translation = await axios.post("https://libretranslate.de/translate", {
+  q: englishHoroscope,
+  source: "en",
+  target: "pl",
+  format: "text"
+});
 
-    const translation = await axios.post("https://libretranslate.de/translate", {
-      q: englishHoroscope,
-      source: "en",
-      target: "pl",
-      format: "text"
-    });
+const polish = translation.data.translatedText;
 
-    const polish = translation.data.translatedText;
+res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
 
-    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
 } catch (err) {
   console.error("API error:", err.response?.data || err.message);
   return res.send("⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " + JSON.stringify(err.response?.data || err.message));
