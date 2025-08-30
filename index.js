@@ -2,7 +2,6 @@ const express = require("express");
 const axios = require("axios");
 const app = express();
 
-// 🔹 MAPA znaków PL -> EN
 const zodiacMap = {
   baran: "aries",
   byk: "taurus",
@@ -27,43 +26,42 @@ app.get("/horoskop", async (req, res) => {
   }
 
   try {
-    // ✅ pobranie horoskopu
+    // 🔹 pobieramy horoskop z API Ninja
     const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
       params: { zodiac: signEn },
       headers: { "X-Api-Key": process.env.API_KEY }
     });
 
-    console.log("API response:", resp.data);
-
     const englishHoroscope = resp.data.horoscope;
-
     if (!englishHoroscope) {
       return res.send("⚠️ API nie zwróciło horoskopu.");
     }
 
-    // ✅ tłumaczenie przez darmowy serwer LibreTranslate
-    const translation = await axios.post(
-      "https://libretranslate.com/translate",
-      {
-        q: englishHoroscope,
-        source: "en",
-        target: "pl",
-        format: "text"
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    let polish = null;
+    try {
+      // 🔹 próbujemy tłumaczenia
+      const translation = await axios.post(
+        "https://translate.terraprint.co/translate", // inna publiczna instancja
+        {
+          q: englishHoroscope,
+          source: "en",
+          target: "pl",
+          format: "text"
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-    const polish = translation.data.translatedText;
+      polish = translation.data.translatedText;
+    } catch (e) {
+      console.warn("❌ Tłumaczenie nie działa, wysyłam EN:", e.message);
+    }
 
-    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
+    // 🔹 jeśli tłumaczenie się udało -> PL, jeśli nie -> EN
+    res.send(`🔮 Horoskop dla ${signPl}: ${polish || englishHoroscope}`);
+
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
-    return res.send(
-      "⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " +
-        JSON.stringify(err.response?.data || err.message)
-    );
+    res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
   }
 });
 
