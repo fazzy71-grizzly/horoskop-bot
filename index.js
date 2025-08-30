@@ -4,35 +4,37 @@ import fetch from "node-fetch";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Mapa emoji dla znaków zodiaku
-const emojiMap = {
-  baran: "♈",
-  byk: "♉",
-  bliznieta: "♊",
-  rak: "♋",
-  lew: "♌",
-  panna: "♍",
-  waga: "♎",
-  skorpion: "♏",
-  strzelec: "♐",
-  koziorozec: "♑",
-  wodnik: "♒",
-  ryby: "♓"
+// Mapowanie znaków → poprawna nazwa dla API + emoji
+const signMap = {
+  baran: { name: "baran", emoji: "♈" },
+  byk: { name: "byk", emoji: "♉" },
+  bliznieta: { name: "bliźnięta", emoji: "♊" },
+  rak: { name: "rak", emoji: "♋" },
+  lew: { name: "lew", emoji: "♌" },
+  panna: { name: "panna", emoji: "♍" },
+  waga: { name: "waga", emoji: "♎" },
+  skorpion: { name: "skorpion", emoji: "♏" },
+  strzelec: { name: "strzelec", emoji: "♐" },
+  koziorozec: { name: "koziorożec", emoji: "♑" },
+  wodnik: { name: "wodnik", emoji: "♒" },
+  ryby: { name: "ryby", emoji: "♓" }
 };
 
-// Lista dostępnych znaków (po polsku, jak w API)
-const validSigns = Object.keys(emojiMap);
+const validSigns = Object.keys(signMap);
 
 app.get("/:sign", async (req, res) => {
   try {
-    const sign = req.params.sign.toLowerCase();
+    const rawSign = req.params.sign.toLowerCase();
 
-    if (!validSigns.includes(sign)) {
+    // Sprawdzamy czy znak istnieje w naszej mapie
+    if (!validSigns.includes(rawSign)) {
       return res.send("❌ Nieznany znak zodiaku! (np. panna, rak, lew...)");
     }
 
-    // Pobranie danych z API
-    const apiUrl = "https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=" + sign;
+    const { name, emoji } = signMap[rawSign];
+
+    // Pobieramy horoskop z API
+    const apiUrl = `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${encodeURIComponent(name)}`;
     const response = await fetch(apiUrl);
     const data = await response.json();
 
@@ -40,18 +42,16 @@ app.get("/:sign", async (req, res) => {
       return res.send("❌ Błąd przy pobieraniu horoskopu!");
     }
 
-    const horoscope = data.signs.find(s => s.title.toLowerCase() === sign);
+    const horoscope = data.signs.find(s => s.title.toLowerCase() === name);
     if (!horoscope) {
       return res.send("❌ Brak horoskopu dla tego znaku.");
     }
 
-    const emoji = emojiMap[sign] || "✨";
+    // Czyścimy tekst – usuwamy HTML i „Czytaj więcej...”
     let prediction = horoscope.prediction.replace(/<[^>]+>/g, "").trim();
-
-    // Usuwamy końcówkę "Czytaj więcej o ..."
     prediction = prediction.replace(/Czytaj więcej.+$/i, "").trim();
 
-    // Odpowiedź dla StreamElements
+    // Finalna odpowiedź
     res.send(
       `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | Źródło: moj-codzienny-horoskop.com`
     );
