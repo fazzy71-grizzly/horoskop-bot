@@ -1,6 +1,6 @@
 import express from "express";
 import fetch from "node-fetch";
-import * as translate from "@vitalets/google-translate-api";
+import translate from "@vitalets/google-translate-api";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,10 +32,10 @@ app.get("/:sign", async (req, res) => {
     const response = await fetch(`https://ohmanda.com/api/horoscope/${signEN}`);
     const data = await response.json();
 
-    // poprawny sposób użycia
-    const { text } = await translate.translate(data.horoscope, { to: "pl" });
+    // użycie paczki
+    const result = await translate(data.horoscope, { to: "pl" });
 
-    res.send(`Horoskop na dziś (${signPL}): ${text}`);
+    res.send(`Horoskop na dziś (${signPL}): ${result.text}`);
   } catch (err) {
     console.error(err);
     res.send("❌ Błąd przy pobieraniu horoskopu!");
