@@ -20,14 +20,6 @@ const emojiMap = {
   ryby: "♓"
 };
 
-// Funkcja do zamiany ocen (1-5) na gwiazdki
-function stars(n) {
-  n = parseInt(n);
-  if (isNaN(n) || n < 1) n = 1;
-  if (n > 5) n = 5;
-  return "⭐".repeat(n) + "☆".repeat(5 - n);
-}
-
 // Lista dostępnych znaków (po polsku, jak w API)
 const validSigns = Object.keys(emojiMap);
 
@@ -54,14 +46,14 @@ app.get("/:sign", async (req, res) => {
     }
 
     const emoji = emojiMap[sign] || "✨";
-    const prediction = horoscope.prediction.replace(/<[^>]+>/g, "").trim();
+    let prediction = horoscope.prediction.replace(/<[^>]+>/g, "").trim();
+
+    // Usuwamy końcówkę "Czytaj więcej o ..."
+    prediction = prediction.replace(/Czytaj więcej.+$/i, "").trim();
 
     // Odpowiedź dla StreamElements
     res.send(
-      `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | ` +
-      `Nastrój: ${stars(horoscope.rating_mood)} | ` +
-      `Miłość: ${stars(horoscope.rating_love)} | ` +
-      `Praca: ${stars(horoscope.rating_work)}`
+      `🔮 Horoskop na dziś ${emoji} ${horoscope.title}: ${prediction} | Źródło: moj-codzienny-horoskop.com`
     );
 
   } catch (err) {
