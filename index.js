@@ -1,7 +1,9 @@
 const express = require("express");
 const axios = require("axios");
+const translate = require("@vitalets/google-translate-api"); // ✅ import tłumacza
 const app = express();
 
+// 🔹 MAPA znaków PL -> EN
 const zodiacMap = {
   baran: "aries",
   byk: "taurus",
@@ -26,42 +28,30 @@ app.get("/horoskop", async (req, res) => {
   }
 
   try {
-    // 🔹 pobieramy horoskop z API Ninja
+    // ✅ pobranie horoskopu z API Ninjas
     const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
       params: { zodiac: signEn },
       headers: { "X-Api-Key": process.env.API_KEY }
     });
 
-    const englishHoroscope = resp.data.horoscope;
+    console.log("API response:", resp.data);
+
+    let englishHoroscope = resp.data.horoscope;
+
     if (!englishHoroscope) {
       return res.send("⚠️ API nie zwróciło horoskopu.");
     }
 
-    let polish = null;
-    try {
-      // 🔹 próbujemy tłumaczenia
-      const translation = await axios.post(
-        "https://translate.terraprint.co/translate", // inna publiczna instancja
-        {
-          q: englishHoroscope,
-          source: "en",
-          target: "pl",
-          format: "text"
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
+    // ✅ tłumaczenie horoskopu na polski
+    const translation = await translate(englishHoroscope, { to: "pl" });
 
-      polish = translation.data.translatedText;
-    } catch (e) {
-      console.warn("❌ Tłumaczenie nie działa, wysyłam EN:", e.message);
-    }
-
-    // 🔹 jeśli tłumaczenie się udało -> PL, jeśli nie -> EN
-    res.send(`🔮 Horoskop dla ${signPl}: ${polish || englishHoroscope}`);
-
+    res.send(`🔮 Horoskop dla ${signPl}: ${translation.text}`);
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
-    res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
+    res.send(
+      "⚠️ Wystąpił problem z pobraniem horoskopu. " +
+        JSON.stringify(err.response?.data || err.message)
+    );
   }
 });
 
