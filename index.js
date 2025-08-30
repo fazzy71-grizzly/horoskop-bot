@@ -27,6 +27,7 @@ app.get("/horoskop", async (req, res) => {
   }
 
   try {
+    // ✅ pobranie horoskopu
     const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
       params: { zodiac: signEn },
       headers: { "X-Api-Key": process.env.API_KEY }
@@ -36,10 +37,33 @@ app.get("/horoskop", async (req, res) => {
 
     const englishHoroscope = resp.data.horoscope;
 
-    res.send(`🔮 Horoskop dla ${signPl}: ${englishHoroscope}`);
+    if (!englishHoroscope) {
+      return res.send("⚠️ API nie zwróciło horoskopu.");
+    }
+
+    // ✅ tłumaczenie przez darmowy serwer LibreTranslate
+    const translation = await axios.post(
+      "https://translate.astian.org/translate",
+      {
+        q: englishHoroscope,
+        source: "en",
+        target: "pl",
+        format: "text"
+      },
+      {
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+
+    const polish = translation.data.translatedText;
+
+    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
-    res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
+    return res.send(
+      "⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " +
+        JSON.stringify(err.response?.data || err.message)
+    );
   }
 });
 
