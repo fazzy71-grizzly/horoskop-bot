@@ -1,48 +1,45 @@
 import express from "express";
 import fetch from "node-fetch";
-import translate from "google-translate-api-x";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 const zodiacMap = {
-  "baran": "aries",
-  "byk": "taurus",
-  "bliźnięta": "gemini",
-  "rak": "cancer",
-  "lew": "leo",
-  "panna": "virgo",
-  "waga": "libra",
-  "skorpion": "scorpio",
-  "strzelec": "sagittarius",
-  "koziorożec": "capricorn",
-  "wodnik": "aquarius",
-  "ryby": "pisces"
+  "baran": "baran",
+  "byk": "byk",
+  "bliźnięta": "bliznieta",
+  "rak": "rak",
+  "lew": "lew",
+  "panna": "panna",
+  "waga": "waga",
+  "skorpion": "skorpion",
+  "strzelec": "strzelec",
+  "koziorożec": "koziorozec",
+  "wodnik": "wodnik",
+  "ryby": "ryby"
 };
 
 app.get("/:sign", async (req, res) => {
+  const signPL = req.params.sign.toLowerCase();
+  const signKey = zodiacMap[signPL];
+
+  if (!signKey) {
+    return res.send("❌ Nieznany znak zodiaku!");
+  }
+
   try {
-    const signPL = req.params.sign.toLowerCase();
-    const signEN = zodiacMap[signPL];
-
-    if (!signEN) {
-      return res.send("❌ Nie znam takiego znaku zodiaku!");
-    }
-
-    const response = await fetch(`https://ohmanda.com/api/horoscope/${signEN}`);
+    const url = `https://www.moj-codzienny-horoskop.com/webmaster/api_JSON.php?type=1&sign=${signKey}`;
+    const response = await fetch(url);
     const data = await response.json();
 
-    if (!data.horoscope) {
-      return res.send("❌ Brak danych horoskopu!");
+    if (!data?.horoscope) {
+      return res.send("❌ Brak horoskopu dla tego znaku.");
     }
 
-    const result = await translate(data.horoscope, { to: "pl" });
-
-    res.send(`Horoskop na dziś (${signPL}): ${result.text}`);
+    res.send(`Horoskop na dziś (${signPL}): ${data.horoscope}`);
   } catch (err) {
     console.error(err);
-    res.send("❌ Błąd przy pobieraniu horoskopu!");
+    res.send("❌ Błąd serwera przy pobieraniu horoskopu!");
   }
 });
 
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server działa: port ${PORT}`));
