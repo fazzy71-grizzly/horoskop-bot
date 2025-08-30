@@ -34,11 +34,25 @@ app.get("/horoskop", async (req, res) => {
 
     console.log("API response:", resp.data);
 
-    const englishHoroscope = resp.data.horoscope; // ✅ tu powinien być tekst
+console.log("API response:", JSON.stringify(resp.data, null, 2));
 
-    if (!englishHoroscope) {
-      return res.send("⚠️ API nie zwróciło horoskopu.");
-    }
+let englishHoroscope;
+
+// jeśli horoscope jest stringiem
+if (typeof resp.data.horoscope === "string") {
+  englishHoroscope = resp.data.horoscope;
+}
+// jeśli horoscope jest obiektem z datami
+else if (typeof resp.data.horoscope === "object") {
+  // bierzemy pierwszy klucz (np. "2025-08-30")
+  const firstKey = Object.keys(resp.data.horoscope)[0];
+  englishHoroscope = resp.data.horoscope[firstKey];
+}
+
+if (!englishHoroscope) {
+  return res.send("⚠️ API nie zwróciło horoskopu. Odpowiedź: " + JSON.stringify(resp.data));
+}
+
 
     const translation = await axios.post("https://libretranslate.de/translate", {
       q: englishHoroscope,
