@@ -1,11 +1,10 @@
 import express from "express";
 import fetch from "node-fetch";
-import translate from "@vitalets/google-translate-api"; // darmowa paczka
+import translate from "@vitalets/google-translate-api";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Mapowanie polskich nazw znaków na angielskie
 const zodiacMap = {
   "baran": "aries",
   "byk": "taurus",
@@ -30,11 +29,9 @@ app.get("/:sign", async (req, res) => {
       return res.send("❌ Nie znam takiego znaku zodiaku!");
     }
 
-    // Pobranie horoskopu po angielsku
     const response = await fetch(`https://ohmanda.com/api/horoscope/${signEN}`);
     const data = await response.json();
 
-    // Tłumaczenie na polski
     const translated = await translate(data.horoscope, { to: "pl" });
 
     res.send(`Horoskop na dziś (${signPL}): ${translated.text}`);
@@ -44,4 +41,4 @@ app.get("/:sign", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
