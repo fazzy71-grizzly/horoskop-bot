@@ -33,7 +33,7 @@ try {
     headers: { "5xI2pNA3GK3MSFV3AOACOA==1MsMOXEaPRUkYarB": process.env.API_KEY }
   });
 
-  const englishHoroscope = resp.data.horoscope.today; // <- poprawka
+  const englishHoroscope = resp.data.horoscope; // <- poprawka
 
   // 2. Tłumaczenie na polski (LibreTranslate darmowe)
   const translation = await axios.post("https://libretranslate.de/translate", {
