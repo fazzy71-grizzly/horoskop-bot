@@ -29,7 +29,7 @@ app.get("/horoskop", async (req, res) => {
 try {
   const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
     params: { zodiac: signEn },
-    headers: { "X-Api-Key": process.env.API_KEY }
+    headers: { "5xI2pNA3GK3MSFV3AOACOA==1MsMOXEaPRUkYarB": process.env.API_KEY }
   });
 
   console.log("API response:", resp.data); // <<< logowanie w konsoli
