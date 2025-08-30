@@ -51,7 +51,7 @@ app.get("/horoskop", async (req, res) => {
         format: "text"
       },
       {
-        headers: { "Content-Type": "application/json" } // ✅ to naprawia problem
+        headers: { "Content-Type": "application/json" }
       }
     );
 
@@ -63,4 +63,14 @@ app.get("/horoskop", async (req, res) => {
     res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
   } catch (err) {
     console.error("API error:", err.response?.data || err.message);
-    return
+    return res.send(
+      "⚠️ Wystąpił problem z pobraniem horoskopu. Szczegóły: " +
+        JSON.stringify(err.response?.data || err.message)
+    );
+  }
+});
+
+// ✅ To było brakujące zamknięcie całego pliku
+app.listen(process.env.PORT || 3000, () =>
+  console.log("✅ Serwer działa...")
+);
