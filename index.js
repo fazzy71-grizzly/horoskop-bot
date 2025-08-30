@@ -26,30 +26,31 @@ app.get("/horoskop", async (req, res) => {
     return res.send("❌ Podaj poprawny znak zodiaku (np. baran, byk, ryby).");
   }
 
-  try {
-    // 1. Pobranie horoskopu (ENG) z API-Ninjas
-    const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
-      params: { zodiac: signEn },
-      headers: { "rnd_HoUZsuZCCHf0cnR07jFKTpKCqQk0": process.env.API_KEY } // <- klucz z Render (Environment)
-    });
+try {
+  // 1. Pobranie horoskopu (ENG) z API-Ninjas
+  const resp = await axios.get("https://api.api-ninjas.com/v1/horoscope", {
+    params: { zodiac: signEn },
+    headers: { "X-Api-Key": process.env.API_KEY }
+  });
 
-    const englishHoroscope = resp.data.horoscope.today;
+  const englishHoroscope = resp.data.horoscope.today; // <- poprawka
 
-    // 2. Tłumaczenie na polski (LibreTranslate darmowe)
-    const translation = await axios.post("https://libretranslate.de/translate", {
-      q: englishHoroscope,
-      source: "en",
-      target: "pl",
-      format: "text"
-    });
+  // 2. Tłumaczenie na polski (LibreTranslate darmowe)
+  const translation = await axios.post("https://libretranslate.de/translate", {
+    q: englishHoroscope,
+    source: "en",
+    target: "pl",
+    format: "text"
+  });
 
-    const polish = translation.data.translatedText;
+  const polish = translation.data.translatedText;
 
-    res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
-  } catch (err) {
-    console.error(err.message);
-    res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
-  }
+  res.send(`🔮 Horoskop dla ${signPl}: ${polish}`);
+} catch (err) {
+  console.error(err.message, err.response?.data);
+  res.send("⚠️ Wystąpił problem z pobraniem horoskopu.");
+}
+
 });
 
 app.listen(process.env.PORT || 3000, () =>
