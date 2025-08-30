@@ -33,7 +33,7 @@ app.get("/horoskop", async (req, res) => {
       headers: { "rnd_HoUZsuZCCHf0cnR07jFKTpKCqQk0": process.env.API_KEY } // <- klucz z Render (Environment)
     });
 
-    const englishHoroscope = resp.data.horoscope;
+    const englishHoroscope = resp.data.horoscope.today;
 
     // 2. Tłumaczenie na polski (LibreTranslate darmowe)
     const translation = await axios.post("https://libretranslate.de/translate", {
