@@ -43,7 +43,7 @@ app.get("/horoskop", async (req, res) => {
 
     // ✅ tłumaczenie przez darmowy serwer LibreTranslate
     const translation = await axios.post(
-      "https://translate.astian.org/translate",
+      "https://libretranslate.com/translate",
       {
         q: englishHoroscope,
         source: "en",
